@@ -44,6 +44,9 @@
 *.idb
 *.pdb
 
+# vim files
+*.sw*
+
 # Kernel Module Compile Results
 *.mod*
 *.cmd

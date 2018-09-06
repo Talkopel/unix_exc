@@ -17,12 +17,12 @@ SOURCES = $(wildcard *.c)
 OBJECTS = $(SOURCES:.c=.o)
 
 
-all: project
+all: dup
 
 
-project: $(OBJECTS)
+dup: $(OBJECTS)
 
-	$(CC) $(OBJECTS) $(CFLAGS) -o project
+	$(CC) $(OBJECTS) $(CFLAGS) -o dup
 
 
 
@@ -34,7 +34,7 @@ project: $(OBJECTS)
 
 clean:
 
-	rm -rf *.o project
+	rm -rf *.o dup
 
 
 

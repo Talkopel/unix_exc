@@ -5,7 +5,7 @@
 # include <stdio.h>
 
 const char * file_test = "local.txt";
-const char * file_content = "ABCDEFGHIJKLMNOPQRSTUZWXYZ\n";
+const char * file_content = "ABCDEFGHIJKLMNOPQRSTUZWXYZ";
 const char * test_write = "BLABLABLA";
 
 int set_up_env(const char *filename)
@@ -51,7 +51,7 @@ int test_with_file(const char *filename)
 
 	printf("Trying to write %s to start of file...\n", test_write);	
 
-	if (write(fd, test_write, strlen(test_write) == -1))
+	if (write(fd, test_write, strlen(test_write)) == -1)
 		return -4;
 
 	// write all file content to stdout

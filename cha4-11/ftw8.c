@@ -117,7 +117,7 @@ dopath(Myfunc* func)
 	}
 	
 	if (chdir("..") == -1) /* go up the tree once */
-		return(func(filename, &statbuf, FTW_DNR));
+		err_ret("can't close directory %s", filename);
 
 	if (closedir(dp) < 0)
 		err_ret("can't close directory %s", filename);

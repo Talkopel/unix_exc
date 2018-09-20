@@ -30,10 +30,10 @@ void handler(int signum) {
 	(head->func_p)(head->id);
 	
 	tmp = head;
-	head = head->next;
-	
-	alarm(head->end - time(NULL));
-	
+	if (head->next != 0) {
+		head = head->next;
+		alarm(head->end - time(NULL));
+	}	
 	free(tmp);	
 		
 
@@ -57,7 +57,7 @@ int setup() {
 
 int create_timer(timer_handler func_p, unsigned int seconds) {
 
-	unsigned int time_to_ring = 0;	
+	unsigned int calc_end = 0;	
 	timer *anchor = 0;
 	timer *tmp  = 0;
 	
@@ -75,22 +75,28 @@ int create_timer(timer_handler func_p, unsigned int seconds) {
 	
 		
 	/* If got to here - a timer already exists */
-	time_to_ring = time(NULL) + seconds;
-	anchor = _place_after(time_to_ring);
+	calc_end = time(NULL) + seconds;	
+	anchor = _place_after(calc_end);
 
 	tmp = (timer *) malloc (sizeof(timer));
 	tmp->id = timer_counter++;
 	tmp->func_p = func_p;
 	tmp->start = time(NULL);
 	tmp->end = tmp->start + seconds;
+	
+	if (calc_end < head->end) {
+		/* replace head with tmp and restart alarm */
+		tmp->next = head;
+		head = tmp;
+		alarm(calc_end - time(NULL));
 
-	if (anchor-> next != 0) {
+	}
+	else if (anchor->next != 0) {
 		
 		tmp->next = anchor->next;
 		anchor->next = tmp;
 	}
 	else {
-		
 		tmp->next = 0; 
 		anchor->next = tmp;
 	}
@@ -116,7 +122,7 @@ timer * _place_after(time_t end) {
 
 void user_callback(int id) {
 	
-	printf("timer %d finished\n", id);
+	printf("timer %d finished. the time is: %lu\n", id, time(NULL));
 }
 
 int main(int argc, char *argv[]) {
@@ -126,8 +132,8 @@ int main(int argc, char *argv[]) {
 	int id1, id2, id3;
 
 	id1 = create_timer((*user_callback), 3);
-	id2 = create_timer((*user_callback), 4); 
-	id3 = create_timer((*user_callback), 7); 
+	id2 = create_timer((*user_callback), 7); 
+	id3 = create_timer((*user_callback), 1); 
 	for(;;)
 		pause();
 }

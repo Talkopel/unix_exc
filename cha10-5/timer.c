@@ -78,7 +78,7 @@ int create_timer(timer_handler func_p, unsigned int seconds) {
 	calc_end = time(NULL) + seconds;	
 	anchor = _place_after(calc_end);
 
-	tmp = (timer *) malloc (sizeof(timer));
+	tmp = (timer *) malloc (sizeof(timer)); /*looks almost the same as the code in the first if - make one function*/
 	tmp->id = timer_counter++;
 	tmp->func_p = func_p;
 	tmp->start = time(NULL);
@@ -91,7 +91,7 @@ int create_timer(timer_handler func_p, unsigned int seconds) {
 		alarm(calc_end - time(NULL));
 
 	}
-	else if (anchor->next != 0) {
+	else if (anchor->next != 0) { /*else if and if can be united under same else*/
 		
 		tmp->next = anchor->next;
 		anchor->next = tmp;
@@ -109,9 +109,9 @@ timer * _place_after(time_t end) {
 		
 	timer *curr;
 	curr = head;
-
+/* the return is doplicated - rewrite the function, one return in the end of the function*/
 	while (curr != 0) {
-		if (curr->next != 0 && curr->next->end >= end)
+		if (curr->next != 0 && curr->next->end >= end) 
 			return curr;
 		else if (curr->next == 0)
 			return curr;

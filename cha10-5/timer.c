@@ -15,9 +15,23 @@ typedef struct timer {
 } timer;
 
 
+
 static volatile timer* head;
 static volatile int timer_counter;
 static struct sigaction new_action, old_action;
+
+
+static inline void set_node(timer **node_p, timer_handler func_p, unsigned int seconds) {
+	
+
+	(*node_p) = (timer *) malloc(sizeof(timer));
+	(*node_p)->id = timer_counter++;
+	(*node_p)->start = time(NULL);
+	(*node_p)->end = (*node_p)->start + seconds;
+	(*node_p)->func_p = func_p;
+	
+
+}
 
 
 void handler(int signum) {
@@ -61,13 +75,11 @@ int create_timer(timer_handler func_p, unsigned int seconds) {
 	timer *anchor = 0;
 	timer *tmp  = 0;
 	
+	set_node(&tmp, func_p, seconds);
+
 	if (0 == head) { /* create new timer */
-	
-		head = (timer *) malloc (sizeof(timer));
-		head->id = timer_counter++;
-		head->func_p = func_p;
-		head->start = time(NULL);
-		head->end = head->start + seconds;
+
+		head = tmp;
 		head->next = 0;
 		alarm(seconds);
 		return head->id;
@@ -78,12 +90,6 @@ int create_timer(timer_handler func_p, unsigned int seconds) {
 	calc_end = time(NULL) + seconds;	
 	anchor = _place_after(calc_end);
 
-	tmp = (timer *) malloc (sizeof(timer)); /*looks almost the same as the code in the first if - make one function*/
-	tmp->id = timer_counter++;
-	tmp->func_p = func_p;
-	tmp->start = time(NULL);
-	tmp->end = tmp->start + seconds;
-	
 	if (calc_end < head->end) {
 		/* replace head with tmp and restart alarm */
 		tmp->next = head;
@@ -91,13 +97,11 @@ int create_timer(timer_handler func_p, unsigned int seconds) {
 		alarm(calc_end - time(NULL));
 
 	}
-	else if (anchor->next != 0) { /*else if and if can be united under same else*/
+	else { /*else if and if can be united under same else
+		1. changed so that tmp->next might dereference a null pointer impiclitly instead of explicitly
+		--- is this solution good? I've gotten used to setting null pointer only explicitly (pointer = 0) --- */
 		
 		tmp->next = anchor->next;
-		anchor->next = tmp;
-	}
-	else {
-		tmp->next = 0; 
 		anchor->next = tmp;
 	}
 
@@ -108,15 +112,19 @@ int create_timer(timer_handler func_p, unsigned int seconds) {
 timer * _place_after(time_t end) {
 		
 	timer *curr;
-	curr = head;
-/* the return is doplicated - rewrite the function, one return in the end of the function*/
-	while (curr != 0) {
-		if (curr->next != 0 && curr->next->end >= end) 
-			return curr;
-		else if (curr->next == 0)
-			return curr;
-		curr = curr->next;
+
+	/* the return is doplicated - rewrite the function, one return in the end of the function
+	   fix: 1. while replaced by for
+		2. loop break instead of return
+		3. if condition united to one block
+		--- is this a good solution? ---*/
+
+	for (curr = head; curr != 0 ; curr = curr->next) {
+		if (curr->next != 0 && curr->next->end >= end || 0 == curr->next) 
+			break;
 	}
+
+	return curr;
 		
 }
 

@@ -41,8 +41,8 @@ translate(unsigned char c)
 int
 main(int argc, char* argv[])
 {
-	int					ifd, ofd, i, j, n, err, numop, numbytes;
-	struct stat			sbuf;
+	int					ifd, ofd, i, j, n, err, numop, numbytes, args;
+	struct stat			sbuf, sbuf2;
 	const struct aiocb	*aiolist[NBUF];
 	off_t				off = 0;
 
@@ -50,6 +50,17 @@ main(int argc, char* argv[])
 	ofd = STDOUT_FILENO;
 	if (fstat(ifd, &sbuf) < 0)
 		err_sys("fstat failed");
+
+	if (fstat(ofd, &sbuf2) < 0)
+		err_sys("fstat failed"); 
+
+	if (S_ISREG(sbuf2.st_mode)) {
+		/* regular file - set to append */
+		args = fcntl(ofd, F_GETFL);
+		if (fcntl(ofd, F_SETFL, args | O_APPEND) < 0)
+			err_sys("failed to set append flag");
+
+	}
 
 	/* initialize the buffers */
 	for (i = 0; i < NBUF; i++) {

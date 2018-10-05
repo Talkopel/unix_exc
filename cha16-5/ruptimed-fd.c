@@ -58,6 +58,7 @@ serve(int sockfd)
 void child_done(int signum) {
 	int status;	
 	wait(&status);
+	syslog(LOG_INFO, "child done");
 }
 
 

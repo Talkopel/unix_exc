@@ -16,6 +16,12 @@ typedef struct Node {
 } Node;
 
 
+/* AVL functions declaration */
+void AVL_fix(Node *root, int balance);
+void AVL_check(Node *root);
+/* rotations */
+void rotate_right(Node *root);
+
 static Node* root = NULL;
 
 
@@ -65,7 +71,7 @@ Node *insert(Node *root, int val) {
 		if (root->left != NULL) {
 			root->hl++;
 			n = insert(root->left, val);
-			if (root->hr - root->hl >= 2); /* this location checks balance */
+			AVL_check(root);
 			return n;
 
 		}
@@ -79,7 +85,7 @@ Node *insert(Node *root, int val) {
 		if (root->right != NULL) {
 			root->hr++;
 			n = insert(root->right, val);
-			if (root->hr - root->hl >= 2); /* this location checks balance */
+			AVL_check(root);
 			return n;
 		}
 		else {
@@ -89,6 +95,40 @@ Node *insert(Node *root, int val) {
 	
 	}
 	
+}
+
+void AVL_fix(Node *root, int balance) {
+	
+	switch(balance) {
+	
+		case HRIGHT: 
+			printf("AVL_Fix: node %d is right heavy!\n", root->val);
+			break;
+		case HLEFT:
+			printf("AVL_Fix: node %d is left heavy!\n", root->val);
+			break;
+
+	}
+
+}
+
+void AVL_check(Node *root) {
+	
+	if (root->hl - root->hr >= 2) {
+		/* this node is left heavy by 2 */
+		AVL_fix(root, HLEFT);
+	}
+	else if (root->hr - root->hl >=2) {
+		/* this node is right heavy by 2 */
+		AVL_fix(root, HRIGHT);
+	}
+
+}
+
+void rotate_right(Node *root) {
+
+	return;
+
 }
 
 void inorder_traversal(Node *root) {
@@ -107,11 +147,9 @@ int main(int argc, char *argv[]) {
 	
 	root = insert(root, 50);
 	insert(root, 20);
-	insert(root, 60);
-	insert(root, 25);
-	insert(root, 600);
-	insert(root, 500);
-	insert(root, 550);
+	insert(root, 40);
+	insert(root, 10);
+	insert(root, 15);
 	inorder_traversal(root);
 	printf("height: %d\n",height(root));
 

@@ -9,9 +9,8 @@
 # define HLEFT 2
 
 typedef struct Node {
+	int hr, hl;
 	int val;
-	int balance;
-	int height;
 	struct Node *left;
 	struct Node *right;
 } Node;
@@ -57,12 +56,19 @@ Node *search(Node *root, int val) {
 
 
 Node *insert(Node *root, int val) {
+	
+	Node *n;
 
 	if (root == NULL) return new_node(val);
 	
 	if (val < root->val) {
-		if (root->left != NULL)
-			return insert(root->left, val);
+		if (root->left != NULL) {
+			root->hl++;
+			n = insert(root->left, val);
+			if (root->hr - root->hl >= 2); /* this location checks balance */
+			return n;
+
+		}
 		else {
 			root->left = new_node(val);
 			return root->left;
@@ -70,12 +76,17 @@ Node *insert(Node *root, int val) {
 	}
 
 	else if (val > root->val) {
-		if (root->right != NULL)
-			return insert(root->right, val);
+		if (root->right != NULL) {
+			root->hr++;
+			n = insert(root->right, val);
+			if (root->hr - root->hl >= 2); /* this location checks balance */
+			return n;
+		}
 		else {
 			root->right = new_node(val);
 			return root->right;
 		}
+	
 	}
 	
 }
@@ -85,7 +96,7 @@ void inorder_traversal(Node *root) {
 	if (root == NULL) return;
 	
 	inorder_traversal(root->left);
-	printf("%d\n", root->val);
+	printf("node: %d ---- hright: %d\n", root->val, root->hr - root->hl);
 	inorder_traversal(root->right);
 
 }
@@ -100,6 +111,7 @@ int main(int argc, char *argv[]) {
 	insert(root, 25);
 	insert(root, 600);
 	insert(root, 500);
+	insert(root, 550);
 	inorder_traversal(root);
 	printf("height: %d\n",height(root));
 

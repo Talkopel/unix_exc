@@ -19,11 +19,11 @@ typedef struct Node {
 
 
 /* AVL functions declaration */
-Node *AVL_fix(Node *root, int balance);
+Node *AVL_fix(Node *sub, int balance);
 Node *AVL_check(Node *sub);
 /* rotations */
-Node *rotate_right(Node *root);
-Node *rotate_left(Node *root);
+Node *rotate_right(Node *sub);
+Node *rotate_left(Node *sub);
 
 
 static Node* root = NULL;
@@ -44,7 +44,7 @@ int height(Node *sub) {
 	
 	if (sub == NULL) return -1;
 
-	return max(1 + height(sub->left),1 + height(sub->right)) ;
+	return max(1 + height(sub->left),1 + height(sub->right));
 
 }
 
@@ -85,14 +85,19 @@ Node *insert(Node *sub, int val) {
 		}
 	
 	}	
+	/* this is where the recursion starts going up after inserting new node */
+	/* place wasn't found - return the object already in the tree */
 	else return search(root, val);
 	
 	if ((tmp = AVL_check(sub->right)) != NULL) {
+		/* test right subtree - if changes were made; apply them*/
 		sub->right = tmp;
 	}	
 	if ((tmp = AVL_check(sub->left)) != NULL) {
+		/* same as above just symmetricaly left */
 		sub->left = tmp;
 	}
+	/* if got to root - test if modification is needed at root */
 	if (root == sub && (tmp = AVL_check(root)) != NULL) root = tmp;
 	
 	return n;
@@ -100,7 +105,7 @@ Node *insert(Node *sub, int val) {
 }
 
 Node *AVL_fix(Node *sub, int balance) {
-	
+	/* this function handles tree augmentations */	
 	
 	switch(balance) {
 	
@@ -159,15 +164,7 @@ Node *rotate_right(Node *sub) {
 	b = a->left;
 	a->left = b->right;
 	b->right = a;
-		
 
-	/*
-	a->hl = height(a->left);
-	a->hr = height(a->right);
-
-	b->hl = height(b->left);
-	b->hr = height(b->right);*/
-	
 	return b;
 
 }
@@ -181,13 +178,6 @@ Node *rotate_left(Node *sub) {
 	a->right = b->left;
 	b->left = a;
 	
-
-	/*
-	a->hl = height(a->left);
-	a->hr = height(a->right);
-
-	b->hl = height(b->left);
-	b->hr = height(b->right);*/
 	return b;
 
 }
@@ -232,8 +222,13 @@ int main(int argc, char *argv[]) {
 	insert(root, 31);
 	insert(root, 33);
 	insert(root, 32);
+	insert(root, 302);
+	insert(root, 105);
+	insert(root, 205);
+	insert(root, 1);
+	insert(root, 5);
+	insert(root, 3);
 	print2DUtil(root, 0);
-	printf("height: %d\n",height(root));
-	/*inorder_traversal(root);*/
+	inorder_traversal(root);
 
 }

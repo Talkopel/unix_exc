@@ -3,24 +3,28 @@
 # include <string.h>
 
 
-# define max(x,y) (x >= y) ? x : y
+# define max(x,y) (x > y) ? x : y
 # define BALANCE 0
 # define HRIGHT 1
 # define HLEFT 2
 
+# define COUNT 10
+
 typedef struct Node {
-	int hr, hl;
 	int val;
+	int height;
 	struct Node *left;
 	struct Node *right;
 } Node;
 
 
 /* AVL functions declaration */
-void AVL_fix(Node *root, int balance);
-void AVL_check(Node *root);
+Node *AVL_fix(Node *root, int balance);
+Node *AVL_check(Node *sub);
 /* rotations */
-void rotate_right(Node *root);
+Node *rotate_right(Node *root);
+Node *rotate_left(Node *root);
+
 
 static Node* root = NULL;
 
@@ -36,13 +40,11 @@ Node *new_node(int val) {
 	return node;
 }
 
-
-int height(Node *root) {
+int height(Node *sub) {
 	
-	if (root == NULL || root->left == NULL && root->right == NULL)
-		return 0;
+	if (sub == NULL) return -1;
 
-	return  max(1 + height(root->left), 1 + height(root->right)) ;
+	return max(1 + height(sub->left),1 + height(sub->right)) ;
 
 }
 
@@ -61,73 +63,132 @@ Node *search(Node *root, int val) {
 }
 
 
-Node *insert(Node *root, int val) {
+Node *insert(Node *sub, int val) {
 	
-	Node *n;
+	Node *n, *tmp;
 
-	if (root == NULL) return new_node(val);
+	if (sub == NULL) return new_node(val);
 	
-	if (val < root->val) {
-		if (root->left != NULL) {
-			root->hl++;
-			n = insert(root->left, val);
-			AVL_check(root);
-			return n;
-
-		}
+	if (val < sub->val) {
+		if (sub->left != NULL) n = insert(sub->left, val);
 		else {
-			root->left = new_node(val);
-			return root->left;
+			sub->left = new_node(val);
+			return sub->left;
 		}
 	}
 
-	else if (val > root->val) {
-		if (root->right != NULL) {
-			root->hr++;
-			n = insert(root->right, val);
-			AVL_check(root);
-			return n;
-		}
+	else if (val > sub->val) {
+		if (sub->right != NULL) n = insert(sub->right, val);
 		else {
-			root->right = new_node(val);
-			return root->right;
+			sub->right = new_node(val);
+			return sub->right;
 		}
 	
+	}	
+	else return search(root, val);
+	
+	if ((tmp = AVL_check(sub->right)) != NULL) {
+		sub->right = tmp;
+	}	
+	if ((tmp = AVL_check(sub->left)) != NULL) {
+		sub->left = tmp;
 	}
+	if (root == sub && (tmp = AVL_check(root)) != NULL) root = tmp;
+	
+	return n;
 	
 }
 
-void AVL_fix(Node *root, int balance) {
+Node *AVL_fix(Node *sub, int balance) {
+	
 	
 	switch(balance) {
 	
 		case HRIGHT: 
-			printf("AVL_Fix: node %d is right heavy!\n", root->val);
+			printf("AVL_Fix: node %d is right heavy!\n", sub->val);
+			if (sub->right == NULL || height(sub->right->left) - height(sub->right->right)  <= 0) 
+				return rotate_left(sub);
+			else {
+				/* if right child is left heavy, rotate him right */		
+				sub->right = rotate_right(sub->right);
+				return rotate_left(sub);
+			}
+			
 			break;
 		case HLEFT:
-			printf("AVL_Fix: node %d is left heavy!\n", root->val);
+			printf("AVL_Fix: node %d is left heavy!\n", sub->val);
+			if (sub->left == NULL || height(sub->left->right) - height(sub->left->left) <= 0) 
+				return rotate_right(sub);
+			else {
+				/* if left chiild is right heavy, rotate him left */
+				sub->left = rotate_left(sub->left);
+				return rotate_right(sub);
+		
+			}
 			break;
 
 	}
+	return NULL;
 
 }
 
-void AVL_check(Node *root) {
+Node *AVL_check(Node *sub) {		
+
+	if (sub == NULL) return NULL;
 	
-	if (root->hl - root->hr >= 2) {
+	int hl, hr;
+	hl = height(sub->left);
+	hr = height(sub->right);	
+
+	if (hl - hr >= 2) {
 		/* this node is left heavy by 2 */
-		AVL_fix(root, HLEFT);
+		return AVL_fix(sub, HLEFT);
 	}
-	else if (root->hr - root->hl >=2) {
+	else if (hr - hl >=2) {
 		/* this node is right heavy by 2 */
-		AVL_fix(root, HRIGHT);
+		return AVL_fix(sub, HRIGHT);
 	}
+	else return NULL;
 
 }
 
-void rotate_right(Node *root) {
+Node *rotate_right(Node *sub) {
+	Node *a, *b;
 
-	return;
+	a = sub;
+	b = a->left;
+	a->left = b->right;
+	b->right = a;
+		
+
+	/*
+	a->hl = height(a->left);
+	a->hr = height(a->right);
+
+	b->hl = height(b->left);
+	b->hr = height(b->right);*/
+	
+	return b;
+
+}
+
+Node *rotate_left(Node *sub) {
+	
+	Node *a, *b;
+
+	a = sub;
+	b = a->right;
+	a->right = b->left;
+	b->left = a;
+	
+
+	/*
+	a->hl = height(a->left);
+	a->hr = height(a->right);
+
+	b->hl = height(b->left);
+	b->hr = height(b->right);*/
+	return b;
 
 }
 
@@ -136,8 +197,25 @@ void inorder_traversal(Node *root) {
 	if (root == NULL) return;
 	
 	inorder_traversal(root->left);
-	printf("node: %d ---- hright: %d\n", root->val, root->hr - root->hl);
+	printf("node: %d ---- height: %d\n", root->val, height(root));
 	inorder_traversal(root->right);
+
+}
+
+void print2DUtil(Node *root, int space) {
+	/* taken from geeksforgeeks */
+	if (root == NULL) return; 
+  
+	space += COUNT; 
+  
+	print2DUtil(root->right, space); 
+  
+	printf("\n"); 
+	for (int i = COUNT; i < space; i++) 
+		printf(" "); 
+	printf("v%d\n", root->val); 
+   
+	print2DUtil(root->left, space); 
 
 }
 
@@ -146,11 +224,16 @@ int main(int argc, char *argv[]) {
 	Node *n;	
 	
 	root = insert(root, 50);
-	insert(root, 20);
-	insert(root, 40);
-	insert(root, 10);
-	insert(root, 15);
-	inorder_traversal(root);
+	insert(root, 60); 
+	insert(root, 55);
+	insert(root, 65);
+	insert(root, 70);
+	insert(root, 30);
+	insert(root, 31);
+	insert(root, 33);
+	insert(root, 32);
+	print2DUtil(root, 0);
 	printf("height: %d\n",height(root));
+	/*inorder_traversal(root);*/
 
 }

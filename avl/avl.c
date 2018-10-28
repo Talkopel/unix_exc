@@ -1,15 +1,38 @@
+/*
+*CR:
+*Where is the header file? how is this code usable? 
+*/
 # include <stdlib.h>
 # include <stdio.h>
 # include <string.h>
 
 
 # define max(x,y) (x > y) ? x : y
+
+/*
+*CR: 
+* all those defines should be located in an .h file
+*/
 # define BALANCE 0
+/*
+*CR:
+*Don't save letters. HRIGHT should be a meaningful name: HIGHT_RIGHT or better AVL_TREE_HIGTH_RIGHT where AVL_TREE is the module name.
+*CR2:
+* I continued to read your code. this is HEAVY_RIGHT?? meaningful names...
+*/
 # define HRIGHT 1
 # define HLEFT 2
 
 # define COUNT 10
 
+/*
+*CR:
+* it's a bad practice naming your struct and type the same way. name the struct node_s and the type node_t.
+* note the non-capital letters, it's C not JAVA
+* also, again don't save letters, not val, value.
+* also, even though the goal was to create an integer AVL_TREE there is absolutly no reason to not make a generic one and another simple module wrapping int for a comparison function. 
+* if the above is not clear. please talk to me about it.
+*/
 typedef struct Node {
 	int val;
 	int height;
@@ -19,31 +42,92 @@ typedef struct Node {
 
 
 /* AVL functions declaration */
+/*
+* CR:
+* why here? why note in a header file? are these auxilary functions? (yes they are :) so call them that, no need to predefine them but do add proper comments)
+*/
+
+/*
+*CR:
+* all functions are lacking comments, please read about doxygen and fix this
+*/
 Node *AVL_fix(Node *sub, int balance);
 Node *AVL_check(Node *sub);
 /* rotations */
 Node *rotate_right(Node *sub);
 Node *rotate_left(Node *sub);
 
-
+/*
+* CR:
+* ????
+* Many proplems here:
+* why do you need this? the root node should ne allocated in the init function and handeled by the user
+* you also use root in your search() function as a local variable, try compiling this with -wall...(a hint: nat gonna work)
+* why static? even if you do have a global variable the only reason to make it static is if you make an archive and you want to variables to have the same name
+* this is a bad practice anyway.
+*/
 static Node* root = NULL;
 
 
-Node *new_node(int val) {
-	
+Node *new_node(int val) { /*CR - no need for blank line in function*/ 
+/*CR: (Artem)
+I perefet the following for functions
+ret_t foo(
+			arg1_t arg1,
+			arg2_t arg2,
+			arg3_t arg3)
+{
+	ret_t ret = FAIL_CODE;
+	return ret.
+}
+
+*/
+	/*CR:
+	* a better practice is to initiate this variable regrdless of the malloc.
+	* you need to control your variable values
+	*/
 	Node *node;
 
-	node = (Node *) malloc(sizeof(Node));
-	memset(node, 0, sizeof(Node));
+	node = (Node *) malloc(sizeof(Node)); /*CR- check if malloc failed*/
+	memset(node, 0, sizeof(Node)); /*CR - can use calloc instead of malloc then no need for memset*/
+	/*
+	*CR:
+	* calloc is also more efficiant then memset because its just mapping another address to a zero_page
+	* also you use sizeof(Node) a lot. you should have a constant for that. 0 is a number, no numbers in the code.
+	* also: http://man7.org/linux/man-pages/man3/bzero.3.html
+	* also: you don't have another function that initiates your node with default values,
+	* using zeros and not initiating each field with it's respected default value could easly lead to a bug.
+	*/
 	node->val = val;
 
 	return node;
 }
 
+/*
+* CR: 
+* this function is a height getter, call it that way. "height" is not clear.
+* what's "sub", you measure a height of a tree.
+*/
 int height(Node *sub) {
-	
+	/*
+	* CR:
+	* as much as i like recursion, and trust me I do.
+	* unless there is a very good reason for it we don't use it in code:
+	* it's less readable and it's memory waistfull (a whole function frame is allocated for each itteration)
+	*/
 	if (sub == NULL) return -1;
 
+	/*
+	* CR:
+	* you have many libraries with "max" function defined for integers, use one.
+	* also try aviading trinary operators. (again I personally love them but they are less readable)
+	* 
+	* also you have a bug here: if a tree is 1 node, the height should be 1 yet you return 0. infact you always measure only the height of your subtrees. never the root. 
+	* 
+	* also. -1 and 1 are magic numbers.
+	*
+	* also, never use return <expression> always evaluate the expression first into a variable and return the variable. 
+	*/
 	return max(1 + height(sub->left),1 + height(sub->right));
 
 }
@@ -51,9 +135,27 @@ int height(Node *sub) {
 
 Node *search(Node *root, int val) {
 
+	/*
+	 *CR:
+	 * never use if statement without {}, it's more readable and fool proof (next proggrammer might come and add an expression out of the if statement scope)
+	 */
+
 	if (root == NULL || val == root->val)
 		return root;
 	
+	/*
+	 * CR:
+	 * see previous comments about generic type
+	 */
+	 
+	 /*
+	  * CR:
+	  * severe bug potential! never have more then one return in you function!
+	  * calculate your value into a ret_val variable and have your code return once. you can use exit_label.
+	  *
+	  *also: https://www.geeksforgeeks.org/inorder-tree-traversal-without-recursion-and-without-stack/
+	  * since it's a tree, the readability comment about the recursion is not relevant here but performace wise: what's the biggest tree that a 32bit proccessor can handle?
+	  */
 	if (val < root->val)
 		/* search left subtree */
 		return search(root->left, val);
@@ -63,12 +165,27 @@ Node *search(Node *root, int val) {
 }
 
 
+/*
+ * CR:
+ * again: comments, naming.
+ */
 Node *insert(Node *sub, int val) {
 	
+	/*
+	 *CR:
+	 * uninitiated variables. tmp is not a valid name.
+	 * n?? that's not a name for anything.
+	 */
 	Node *n, *tmp;
-
+	/* 
+	 * CR:
+	 * this function is wierd, you take a node, you reffer to it as a tree and you insert a value.
+	 * you should wrap the node type with a tree type. 
+	 * also why not return an error? BTW you should always return a return_type, a type that indicates how function execution went, you should have an error.h file with an error enum that is typed ret_t or some thing.
+	 */
 	if (sub == NULL) return new_node(val);
 	
+	/*CR - duplicated code, you can create function that receives Node* */
 	if (val < sub->val) {
 		if (sub->left != NULL) n = insert(sub->left, val);
 		else {
@@ -77,18 +194,32 @@ Node *insert(Node *sub, int val) {
 		}
 	}
 
+	/* 
+	 * CR:
+	 * if statements, same thing: the { goes in a new line
+	 */
 	else if (val > sub->val) {
 		if (sub->right != NULL) n = insert(sub->right, val);
 		else {
 			sub->right = new_node(val);
 			return sub->right;
-		}
-	
+		}	
 	}	
 	/* this is where the recursion starts going up after inserting new node */
 	/* place wasn't found - return the object already in the tree */
+	/*
+	 *CR:
+	 * you traverse a tree to add an item and when it's not > or < of current value which means it's = you search for it?!
+	 * also because you don't use {} properly this is barely readable.
+	 */
 	else return search(root, val);
 	
+	/*
+	 *CR:
+	 * you've already inserted a new member into the tree, why do you split the check?! you should have one function to check you tree.
+	 * it should also be called something like "AVL_TREE_balance" 
+	 * why do your check functions have return values that are not "THREE_BALANCED" or "TREE_FIXED"?
+	 */
 	if ((tmp = AVL_check(sub->right)) != NULL) {
 		/* test right subtree - if changes were made; apply them*/
 		sub->right = tmp;
@@ -98,12 +229,18 @@ Node *insert(Node *sub, int val) {
 		sub->left = tmp;
 	}
 	/* if got to root - test if modification is needed at root */
-	if (root == sub && (tmp = AVL_check(root)) != NULL) root = tmp;
+	if (root == sub && (tmp = AVL_check(root)) != NULL) root = tmp; /*CR - don't write in one line*/
 	
 	return n;
 	
 }
 
+/*
+* CR:
+* this is a complex function comment about what it does. no "augmentations"
+*
+* what's balance? (balance_factor is OK, but not int, define an enum)
+*/
 Node *AVL_fix(Node *sub, int balance) {
 	/* this function handles tree augmentations */	
 	
@@ -111,6 +248,10 @@ Node *AVL_fix(Node *sub, int balance) {
 	
 		case HRIGHT: 
 			printf("AVL_Fix: node %d is right heavy!\n", sub->val);
+			/*
+			 *CR:
+			 * split this line! exery expression should be stored in a meaningfuly named variable!
+			 */
 			if (sub->right == NULL || height(sub->right->left) - height(sub->right->right)  <= 0) 
 				return rotate_left(sub);
 			else {
@@ -139,12 +280,19 @@ Node *AVL_fix(Node *sub, int balance) {
 
 Node *AVL_check(Node *sub) {		
 
+	/*
+	* CR: not logic before variable definitions
+	*/
 	if (sub == NULL) return NULL;
 	
 	int hl, hr;
 	hl = height(sub->left);
 	hr = height(sub->right);	
 
+	/*
+	 * CR:
+	 * 2 is a magic number
+	 */
 	if (hl - hr >= 2) {
 		/* this node is left heavy by 2 */
 		return AVL_fix(sub, HLEFT);
@@ -157,6 +305,10 @@ Node *AVL_check(Node *sub) {
 
 }
 
+/*
+* CR:
+* refactor this function, add comments and meaningful names
+*/
 Node *rotate_right(Node *sub) {
 	Node *a, *b;
 
@@ -169,6 +321,12 @@ Node *rotate_right(Node *sub) {
 
 }
 
+/*
+* CR:
+* refactor this function, add comments and meaningful names
+* shouldn't you have 4 rotation types?? you implemant only 2.
+* https://www.gatevidyalay.com/avl-tree-avl-tree-example-avl-tree-rotation/
+*/
 Node *rotate_left(Node *sub) {
 	
 	Node *a, *b;
@@ -182,6 +340,10 @@ Node *rotate_left(Node *sub) {
 
 }
 
+/*
+ *CR:
+ * why not pass a function pointer? otherwise it's not a traversal but a print function
+ */
 void inorder_traversal(Node *root) {
 	
 	if (root == NULL) return;
@@ -192,6 +354,9 @@ void inorder_traversal(Node *root) {
 
 }
 
+/*CR:
+ * if it's external, import it, don't copy in
+ */
 void print2DUtil(Node *root, int space) {
 	/* taken from geeksforgeeks */
 	if (root == NULL) return; 
@@ -201,7 +366,7 @@ void print2DUtil(Node *root, int space) {
 	print2DUtil(root->right, space); 
   
 	printf("\n"); 
-	for (int i = COUNT; i < space; i++) 
+	for (int i = COUNT; i < space; i++)  /*CR - declare variables in the beginning of the function */
 		printf(" "); 
 	printf("v%d\n", root->val); 
    

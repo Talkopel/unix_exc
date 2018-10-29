@@ -2,7 +2,6 @@
 # include <time.h>
 
 
-
 avl_test_function_t value_check(void *value1, void *value2) {
 	int *first_value = 0;
 	int *second_value = 0;
@@ -29,6 +28,7 @@ void traversal_callback(node_t *node) {
 	printf("value: %d\n", *value);
 }
 
+
 int main(int argc, char *argv[]) {
 	
 	avl_tree_t avl = {};
@@ -47,25 +47,12 @@ int main(int argc, char *argv[]) {
 	if (AVL_init(&avl, &current_insert) < 0) {
 		printf("PROBLEM!\n");
 	}
-	else {
-		printf("SUCESS\n");
-	}	
 	
-	current_insert = 1;
-	AVL_insert(&avl, &current_insert);
-	for (i = 0; i < 50; i++) {
-		current_insert = rand() % 50;
+	for (i = 0; i < 20; i++) {
+		current_insert = i;
 		AVL_insert(&avl, &current_insert);
 	}
-	/* 
-	for (i = 0; i< 50; i++) {
-
-		current_insert = rand() % 50;
-		if ((node = AVL_search(&avl, &current_insert)) != NULL) {
-			printf("INSERTED AND FOUND %d\n", current_insert);
-		}
-	}*/
-	AVL_traverse(&avl);
+	AVL_traverse(&avl);	
 	return 0;	
 
 }

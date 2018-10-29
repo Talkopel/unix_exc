@@ -13,7 +13,8 @@ typedef enum avl_test_function_e {
 
 typedef enum avl_api_result_e {
 	AVL_failed = -1,
-	AVL_success
+	AVL_success,
+	AVL_nothing_done
 } avl_api_ret_t;
 
 /* height is always calculate height(left) - height(right) */ 
@@ -60,11 +61,6 @@ typedef struct avl_tree_s {
  */
 avl_api_ret_t AVL_init(avl_tree_t *avl_tree, void *root_value);
 
-/** 
- * AVL tree deletion function, call to securly free all the nodes
- * @param settings is a pointer to avl_tree_t used initialize the tree
- */
-avl_api_ret_t AVL_free(avl_tree_t *avl_tree);
 
 /**
  * AVL tree searh function, returns pointer to the found node or NULL if not found
@@ -80,6 +76,13 @@ node_t *AVL_search(avl_tree_t *avl_tree, void *value);
  * @param value is a pointer to the value to add to the tree
  */
 avl_api_ret_t AVL_insert(avl_tree_t *avl_tree, void *value);
+
+/**
+ * AVL tree remove value - retains AVL property
+ * @param avl_tree tree to remove value from
+ * @param value pointer to the value to remove from the tree
+ */
+avl_api_ret_t AVL_remove(avl_tree_t *avl_tree, void *value);
 
 /**
  * AVL tree traversal by order. This function will call the callback supplied
@@ -138,9 +141,9 @@ void *_allocate_value_with_data(unsigned int value_size, void *value);
 
 /**
  * internal use function - frees value and node
- * @param node is the node to free (NEEDS TO HAVE NO CHILDREN)
+ * @param node is the node to free - doesnt check children
  */
-int _free_childless_node(node_t *node);
+avl_api_ret_t _safe_free_node(node_t *node);
 
 /**
  * internal use function - searches for node recursivley 
@@ -166,3 +169,26 @@ avl_api_ret_t _insert_from_node(avl_tree_t *avl_tree ,node_t *node, void *value)
  */
 void _traverse_tree(avl_tree_t *avl_tree, node_t *node);
 
+
+/**
+ * internal use function - recursivly find and then remove value
+ * @param avl_tree the tree on which to perform the operation
+ * @param node the current node in progress
+ * @param value pointer to the value to remove
+ * NOTE: this function doesn't have a defined behaviour if value is not found */
+node_t * _remove_from_node(avl_tree_t *avl_tree, node_t *node, void *value);
+
+
+/**
+ * internal use function - find the lowest key in the subtree 
+ * @param node is the subtree to look from 
+ */
+node_t *_min_in_subtree(node_t *node);
+
+
+/** 
+ * internal use function - check right left and replaec root if necesairy
+ * @param avl tree upon which to do the action
+ * @param node to check balance on
+ */
+void _enforce_avl(avl_tree_t *avl_tree, node_t *node);

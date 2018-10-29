@@ -16,7 +16,7 @@ avl_api_ret_t AVL_init(avl_tree_t *avl_tree, void *root_value) {
 }
 
 avl_api_ret_t AVL_free(avl_tree_t *avl_tree) {
-	return 0;
+	
 }
 
 node_t *AVL_search(avl_tree_t *avl_tree, void *value) {
@@ -35,6 +35,23 @@ avl_api_ret_t AVL_insert(avl_tree_t *avl_tree, void *value) {
 		ret = _insert_from_node(avl_tree, avl_tree->root, value);
 	}
 
+	return ret;
+}
+
+avl_api_ret_t AVL_remove(avl_tree_t *avl_tree, void *value) {
+	
+	node_t *search_test = NULL;
+	avl_api_ret_t ret = AVL_success;
+	
+	search_test = AVL_search(avl_tree, value);
+	if (NULL == search_test) {
+		ret = AVL_failed;
+	}	
+	else {
+		_remove_from_node(avl_tree, avl_tree->root, value);
+	}
+	
+	
 	return ret;
 }
 
@@ -63,8 +80,8 @@ node_t *_AVL_fix(node_t *subtree) {
 	if (height_difference <= AVL_heavy_right) {
 		/* this subtree is right heavy */
 		tested_child = subtree->right;
-		height_difference = _get_recursive_node_height(subtree->left) -
-				    _get_recursive_node_height(subtree->right);
+		height_difference = _get_recursive_node_height(tested_child->left) -
+				    _get_recursive_node_height(tested_child->right);
 		
 		/* becuase the algorithm is recursive we can assume:
 		 * the highest imbalance of the children will at most be |1|
@@ -78,8 +95,8 @@ node_t *_AVL_fix(node_t *subtree) {
 	else if (height_difference >= AVL_heavy_left) {
 		/* this subtree is left heavy */
 		tested_child = subtree->left;
-		height_difference = _get_recursive_node_height(subtree->left) -
-				    _get_recursive_node_height(subtree->right);
+		height_difference = _get_recursive_node_height(tested_child->left) -
+				    _get_recursive_node_height(tested_child->right);
 		if (height_difference < AVL_balanced) {
 			/* left child is right heavy - rotate left (assumption above) */
 			subtree->left = _rotate_left(subtree->left);
@@ -175,15 +192,11 @@ void *_allocate_value_with_data(unsigned int value_size, void *value) {
 
 
 /* frees childless node */
-int _free_childless_node(node_t *node) {
-	int success;
-	if (node->right || node->left) {
-		success = -1;
-	}
+avl_api_ret_t _safe_free_node(node_t *node) {
+	
 	free(node->value);
 	free(node);
-	success = 0;
-	return success;
+	return AVL_success;
 }
 
 /* searches recursivly */
@@ -222,7 +235,7 @@ avl_api_ret_t _insert_from_node(avl_tree_t *avl_tree, node_t *node, void *value)
 		test_result = avl_tree->test_function(node->value, value);
 		if (AVL_are_equal == test_result) {
 			/* to avoid more logic below a return is best placed here - the node was found in the tree */
-			ret = AVL_success;
+			ret = AVL_nothing_done;
 			return ret;
 		}
 		else if (AVL_left_argument_higher == test_result) {
@@ -242,26 +255,18 @@ avl_api_ret_t _insert_from_node(avl_tree_t *avl_tree, node_t *node, void *value)
 			}
 		}
 		
-		/* fix right subtree */
-		new_parent = _AVL_fix(node->right);
-		if (new_parent != NULL) {
-			node->right = new_parent;
-		}
-		/* fix left subtree */
-		new_parent = _AVL_fix(node->left);
-		if (new_parent != NULL) {
-			node->left = new_parent; 
-		}
 	}
 	
 	
+	_enforce_avl(avl_tree, node);	
 		
 	return ret;
 }
 
 
-
+/* this function traverses the tree in order and calls the user defined callback */
 void _traverse_tree(avl_tree_t *avl_tree, node_t *node) {
+
 	if (NULL == node) return;
 
 	_traverse_tree(avl_tree, node->left);
@@ -269,3 +274,90 @@ void _traverse_tree(avl_tree_t *avl_tree, node_t *node) {
 	_traverse_tree(avl_tree, node->right);
 	
 }
+
+
+/* this function removes a value from the tree - the value must exist */
+node_t *_remove_from_node(avl_tree_t *avl_tree, node_t *node, void *value) {
+	
+	node_t *ret_node = NULL;	
+	node_t *new_parent = NULL;
+	avl_test_function_t test_result;
+
+	if (NULL == node) return NULL; /* base case */
+	
+	test_result = avl_tree->test_function(node->value, value);
+	
+	if (AVL_left_argument_higher == test_result) {
+		node->left = _remove_from_node(avl_tree, node->left, value);	
+	}
+	else if (AVL_right_argument_higher == test_result) {
+		node->right = _remove_from_node(avl_tree, node->right, value);
+	}
+	/* value found */
+	else {
+		
+		if (NULL == node->left) {
+			ret_node = node->right;
+			_safe_free_node(node);	
+		}
+		else if (NULL == node->right) {
+			ret_node = node->left;
+			_safe_free_node(node);
+		}
+		else {
+			/* two children */
+			ret_node = _min_in_subtree(node->right);
+			node->value = ret_node->value;
+			node->right = _remove_from_node(avl_tree, node->right, value);
+			ret_node = node;
+		}
+	
+	}
+	
+	
+	_enforce_avl(avl_tree, node);	
+
+	return ret_node;
+	
+
+}
+
+
+node_t *_min_in_subtree(node_t *node) {
+	
+	node_t *subtree = node;
+	
+	while (NULL != node->left) {
+		node = node->left;
+	}
+
+	return node;
+}
+
+
+void _enforce_avl(avl_tree_t *avl_tree, node_t *node) {
+	
+	node_t *new_parent = NULL;
+
+	/* check if right child is imbalnaced */
+	new_parent = _AVL_fix(node->right);
+	if (NULL != new_parent) {
+		node->right = new_parent;
+	}
+	/* check if left child is imbalanced */
+	new_parent = _AVL_fix(node->left);
+	if (NULL != new_parent) {
+		node->left = new_parent;
+	}
+	/* if root is imbalnaced, rotate */
+	if (node == avl_tree->root) {
+		new_parent = _AVL_fix(node);
+		if (NULL != new_parent) {
+			avl_tree->root = new_parent;
+		}
+	}
+
+}
+
+
+
